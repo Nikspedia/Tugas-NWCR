@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknik Riset Operasional Metode Transportasi NWCR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #6e0000;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+        }
+        .container {
+            margin: 2rem auto;
+            padding: 1rem;
+            max-width: 800px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .grid-input {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .grid-input input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+        }
+        button {
+            background-color: #410a0a;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #a04545;
+        }
+        .results {
+            margin-top: 1rem;
+        }
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .results table, .results th, .results td {
+            border: 1px solid #ccc;
+        }
+        .results th, .results td {
+            text-align: center;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Metode Transportasi NWCR</h1>
+    </header>
+    <div class="container">
+        <h2>Masukan Data</h2>
+        <div>
+            <label for="supplyCount">Jumlah Pengirim: </label>
+            <input type="number" id="supplyCount" min="1" value="3">
+            <label for="demandCount">Jumlah Penerima: </label>
+            <input type="number" id="demandCount" min="1" value="4">
+            <button id="generateInputs">Input</button>
+        </div>
+        <div id="inputSection" style="display: none;">
+            <h3>Input Data</h3>
+            <h4>Nama Pengirim dan Jumlah Muatan</h4>
+            <div class="grid-input" id="supplyInput"></div>
+            <h4>Nama Penerima dan Muatan yang Dibutuhkan</h4>
+            <div class="grid-input" id="demandInput"></div>
+            <h4>Cost Matrix (dalam Rupiah)</h4>
+            <div id="costMatrixContainer"></div>
+            <button type="button" id="calculateButton">Hitung</button>
+        </div>
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        const supplyCountInput = document.getElementById('supplyCount');
+        const demandCountInput = document.getElementById('demandCount');
+        const generateInputsButton = document.getElementById('generateInputs');
+        const inputSection = document.getElementById('inputSection');
+        const supplyInput = document.getElementById('supplyInput');
+        const demandInput = document.getElementById('demandInput');
+        const costMatrixContainer = document.getElementById('costMatrixContainer');
+        const results = document.getElementById('results');
+
+        generateInputsButton.addEventListener('click', () => {
+            const supplyCount = parseInt(supplyCountInput.value);
+            const demandCount = parseInt(demandCountInput.value);
+
+            // Clear previous inputs
+            supplyInput.innerHTML = '';
+            demandInput.innerHTML = '';
+            costMatrixContainer.innerHTML = '';
+
+            // Generate Supply Inputs
+            for (let i = 0; i < supplyCount; i++) {
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = `Nama Pengirim ${i + 1}`;
+                nameInput.required = true;
+
+                const valueInput = document.createElement('input');
+                valueInput.type = 'number';
+                valueInput.placeholder = `Muatan Pengirim ${i + 1}`;
+                valueInput.required = true;
+
+                supplyInput.appendChild(nameInput);
+                supplyInput.appendChild(valueInput);
+            }
+
+            // Generate Demand Inputs
+            for (let i = 0; i < demandCount; i++) {
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = `Nama Penerima ${i + 1}`;
+                nameInput.required = true;
+
+                const valueInput = document.createElement('input');
+                valueInput.type = 'number';
+                valueInput.placeholder = `Muatan Penerima ${i + 1}`;
+                valueInput.required = true;
+
+                demandInput.appendChild(nameInput);
+                demandInput.appendChild(valueInput);
+            }
+
+            // Generate Cost Matrix
+            const table = document.createElement('table');
+            table.style.borderCollapse = 'collapse';
+            table.style.width = '100%';
+
+            for (let i = 0; i < supplyCount; i++) {
+                const row = document.createElement('tr');
+
+                for (let j = 0; j < demandCount; j++) {
+                    const cell = document.createElement('td');
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.placeholder = `Cost [${i + 1}, ${j + 1}] (Rp)`;
+                    input.required = true;
+                    cell.appendChild(input);
+                    cell.style.padding = '5px';
+                    cell.style.border = '1px solid #ccc';
+                    row.appendChild(cell);
+                }
+
+                table.appendChild(row);
+            }
+
+            costMatrixContainer.appendChild(table);
+            inputSection.style.display = 'block';
+        });
+
+        document.getElementById('calculateButton').addEventListener('click', () => {
+            const supplyNames = [];
+            const supplyValues = [];
+            const demandNames = [];
+            const demandValues = [];
+
+            // Get supply data
+            Array.from(supplyInput.querySelectorAll('input')).forEach((input, index) => {
+                if (index % 2 === 0) {
+                    supplyNames.push(input.value);
+                } else {
+                    supplyValues.push(parseFloat(input.value));
+                }
+            });
+
+            // Get demand data
+            Array.from(demandInput.querySelectorAll('input')).forEach((input, index) => {
+                if (index % 2 === 0) {
+                    demandNames.push(input.value);
+                } else {
+                    demandValues.push(parseFloat(input.value));
+                }
+            });
+
+            // Get cost matrix
+            const costMatrix = [];
+            Array.from(costMatrixContainer.querySelectorAll('tr')).forEach((row, i) => {
+                costMatrix[i] = Array.from(row.querySelectorAll('input')).map(input => parseFloat(input.value));
+            });
+
+            const { allocation, totalCost, detailedCosts } = nwcr(supplyValues, demandValues, costMatrix);
+            displayResult(allocation, totalCost, detailedCosts, costMatrix, supplyNames, demandNames);
+        });
+
+        function nwcr(supply, demand, costMatrix) {
+            const rows = supply.length;
+            const cols = demand.length;
+            const allocation = Array.from({ length: rows }, () => Array(cols).fill(0));
+            const detailedCosts = [];
+            let totalCost = 0; // Initialize total cost
+
+            let i = 0;
+            let j = 0;
+
+            while (i < rows && j < cols) {
+                const allocated = Math.min(supply[i], demand[j]);
+                allocation[i][j] = allocated;
+                supply[i] -= allocated;
+                demand[j] -= allocated;
+
+                const cost = allocated * costMatrix[i][j]; // Calculate cost for this allocation
+                detailedCosts.push({ from: i, to: j, quantity: allocated, cost });
+                totalCost += cost;
+
+                if (supply[i] === 0) i++;
+                if (demand[j] === 0) j++;
+            }
+
+            return { allocation, totalCost, detailedCosts };
+        }
+
+        function displayResult(allocation, totalCost, detailedCosts, costMatrix, supplyNames, demandNames) {
+            results.innerHTML = '<h3>Allocation Matrix</h3>';
+
+            const table = document.createElement('table');
+            const rows = allocation.length;
+            const cols = allocation[0].length;
+
+            // Display allocation matrix
+            for (let i = 0; i < rows; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < cols; j++) {
+                    const cell = document.createElement('td');
+                    cell.textContent = allocation[i][j];
+                    row.appendChild(cell);
+                }
+                table.appendChild(row);
+            }
+
+            results.appendChild(table);
+
+            // Display detailed costs
+            const costDetails = document.createElement('div');
+            costDetails.innerHTML = '<h3>Cost Details</h3>';
+            detailedCosts.forEach(({ from, to, quantity, cost }) => {
+                const detail = document.createElement('p');
+                detail.textContent = `${supplyNames[from]} -> ${demandNames[to]}: Quantity = ${quantity}, Cost = Rp ${cost.toLocaleString()}`;
+                costDetails.appendChild(detail);
+            });
+
+            results.appendChild(costDetails);
+
+            // Display total cost
+            const costDisplay = document.createElement('p');
+            costDisplay.textContent = `Total Cost: Rp ${totalCost.toLocaleString()}`;
+            results.appendChild(costDisplay);
+
+            // Display cost matrix
+            const costTable = document.createElement('table');
+            costTable.style.borderCollapse = 'collapse';
+            costTable.style.width = '100%';
+
+            for (let i = 0; i < costMatrix.length; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < costMatrix[i].length; j++) {
+                    const cell = document.createElement('td');
+                    cell.textContent = `Rp ${costMatrix[i][j].toLocaleString()}`;
+                    cell.style.padding = '5px';
+                    cell.style.border = '1px solid #ccc';
+                    row.appendChild(cell);
+                }
+                costTable.appendChild(row);
+            }
+
+            results.appendChild(costTable);
+        }
+    </script>
+</body>
+</html>
